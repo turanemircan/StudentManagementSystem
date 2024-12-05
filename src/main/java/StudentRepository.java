@@ -13,7 +13,6 @@ public class StudentRepository implements Repository<Student, Integer> {
     // 7-t_student tablosunu olusturma
     @Override
     public void createTabLe() {
-
         JdbcUtils.setConnection(); // bağlantı olustu
         JdbcUtils.setStatement(); // statement başlattık
 
@@ -60,47 +59,111 @@ public class StudentRepository implements Repository<Student, Integer> {
         }
     }
 
-    @Override
+    // 9-tüm öğrencileri db den çekme
     public List<Student> findAll() {
         JdbcUtils.setConnection();
         JdbcUtils.setStatement();
-        List<Student>allStudent=new ArrayList<>();
+        List<Student> allStudent = new ArrayList<>();
         try {
-            ResultSet rs=JdbcUtils.st.executeQuery("select * from t_student");
-            while (rs.next()){
-                Student student=new Student(rs.getString("name"),
+            ResultSet rs = JdbcUtils.st.executeQuery("SELECT * FROM t_student");
+            while (rs.next()) {
+                Student student = new Student(rs.getString("name"),
                         rs.getString("lastname"),
                         rs.getString("city"),
                         rs.getInt("age"));
                 student.setId(rs.getInt("id"));
                 allStudent.add(student);
-
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        }finally {
+        } finally {
             try {
                 JdbcUtils.st.close();
                 JdbcUtils.connection.close();
             } catch (SQLException e) {
                 System.out.println(e.getMessage());
             }
-
         }
-
         return allStudent;
     }
 
+    // 11- verilen yeni öğrenci bilgisi ile var olan öğrenciyi güncelleme
     @Override
-    public void update(Student entity) {
+    public void update(Student student) { // student: öğrencinin yeni bilgileri
+        JdbcUtils.setConnection();
+        JdbcUtils.setPreparedStatement("UPDATE t_student SET name=?, lastname=?, city=?, age=? WHERE id=?");
+        try {
+            JdbcUtils.prst.setString(1, student.getName());
+            JdbcUtils.prst.setString(2, student.getLastName());
+            JdbcUtils.prst.setString(3, student.getCity());
+            JdbcUtils.prst.setInt(4, student.getAge());
+            JdbcUtils.prst.setInt(5, student.getId());
+            int updated = JdbcUtils.prst.executeUpdate();
+            if (updated > 0) {
+                System.out.println("Güncelleme başarılı...:"); // 1
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                JdbcUtils.prst.close();
+                JdbcUtils.connection.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
+    // 12-id si verilen öğrenciyi silme
     @Override
     public void deleteById(Integer id) {
+        JdbcUtils.setConnection();
+        JdbcUtils.setStatement();
+
+        try {
+            int deleted = JdbcUtils.st.executeUpdate("DELETE FROM t_student WHERE id=" + id);
+            // kayıt bulunursa 1 aksi halde 0 kayıt silinir
+            if (deleted > 0) {
+                System.out.println("Öğrenci silindi, ID : " + id);
+            } else {
+                System.out.println("Öğrenci bulunamadı....");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                JdbcUtils.st.close();
+                JdbcUtils.connection.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
+    // 10-idsi verilen öğrenciyi bulma
     @Override
     public Student findById(Integer id) {
-        return null;
+        Student student = null;
+        JdbcUtils.setConnection();
+        JdbcUtils.setPreparedStatement("SELECT * FROM t_student WHERE id=?");
+        try {
+            JdbcUtils.prst.setInt(1, id);
+            ResultSet rs = JdbcUtils.prst.executeQuery();
+            if (rs.next()) {
+                student = new Student(rs.getString("name"), rs.getString("lastname"),
+                        rs.getString("city"), rs.getInt("age"));
+                student.setId(rs.getInt("id"));
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        } finally {
+            try {
+                JdbcUtils.prst.close();
+                JdbcUtils.connection.close();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return student;
     }
 }

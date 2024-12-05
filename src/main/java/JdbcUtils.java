@@ -28,7 +28,7 @@ public class JdbcUtils {
     }
 
     // 4-c preparedstatement olusturma
-    public static void setPreparedStatement(String sql){
+    public static void setPreparedStatement(String sql) {
         try {
             prst = connection.prepareStatement(sql);
         } catch (SQLException e) {
